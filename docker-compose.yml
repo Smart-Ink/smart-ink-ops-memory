@@ -1,0 +1,50 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: smart_ink_ops
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  memory-service:
+    build:
+      context: .
+      dockerfile: services/memory/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/smart_ink_ops
+    ports:
+      - "8102:8102"
+    depends_on:
+      - db
+
+  ingest-service:
+    build:
+      context: .
+      dockerfile: services/ingest/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/smart_ink_ops
+      MEMORY_SERVICE_URL: http://memory-service:8102
+    ports:
+      - "8101:8101"
+    depends_on:
+      - db
+      - memory-service
+
+  worker-service:
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/smart_ink_ops
+    ports:
+      - "8103:8103"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
