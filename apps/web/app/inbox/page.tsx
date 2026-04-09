@@ -25,11 +25,6 @@ export default function InboxPage() {
     await load();
   }
 
-  async function reject(id: string) {
-    await fetch(`/api/inbox/${id}/reject`, { method: 'POST' });
-    await load();
-  }
-
   useEffect(() => {
     load();
   }, []);
@@ -38,16 +33,7 @@ export default function InboxPage() {
     <div>
       <h2>Review Inbox</h2>
       <table>
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>Title</th>
-            <th>Summary</th>
-            <th>Status</th>
-            <th>Confidence</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Type</th><th>Title</th><th>Summary</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>
           {items.map((i) => (
             <tr key={i.id}>
@@ -55,19 +41,7 @@ export default function InboxPage() {
               <td>{i.title}</td>
               <td>{i.summary}</td>
               <td>{i.status}</td>
-              <td>{i.confidenceScore.toFixed(2)}</td>
-              <td>
-                {i.status === 'pending' ? (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => approve(i.id)}>Approve</button>
-                    <button onClick={() => reject(i.id)} style={{ background: '#b91c1c' }}>
-                      Reject
-                    </button>
-                  </div>
-                ) : (
-                  '-'
-                )}
-              </td>
+              <td>{i.status === 'pending' ? <button onClick={() => approve(i.id)}>Approve</button> : '-'}</td>
             </tr>
           ))}
         </tbody>

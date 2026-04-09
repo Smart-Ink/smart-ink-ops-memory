@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import os
 from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from .adapter import get_memory_adapter
-from .interface import MemoryAdapter
+from .adapter import MemPalaceAdapter
 
-adapter_mode = os.environ.get("MEMORY_ADAPTER_MODE", "stub")
-adapter: MemoryAdapter = get_memory_adapter(adapter_mode)
+adapter = MemPalaceAdapter()
 app = FastAPI(title="smart-ink memory service")
 
 
@@ -27,7 +24,7 @@ class SearchRequest(BaseModel):
 
 @app.get('/health')
 def health():
-    return {'ok': True, 'adapter_mode': adapter_mode}
+    return {'ok': True}
 
 
 @app.post('/index')
