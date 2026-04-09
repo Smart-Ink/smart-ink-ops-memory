@@ -1,0 +1,21 @@
+{
+  "conversations": [
+    {
+      "id": "conv-demo-1",
+      "title": "Smart Ink ops planning",
+      "started_at": "2026-04-01T10:00:00Z",
+      "messages": [
+        {
+          "id": "m-1",
+          "role": "user",
+          "content": "Create a prompt template for weekly planning and track TODO follow up tasks"
+        },
+        {
+          "id": "m-2",
+          "role": "assistant",
+          "content": "Meeting agenda: review decision to ship memory dashboard and link docs asset"
+        }
+      ]
+    }
+  ]
+}

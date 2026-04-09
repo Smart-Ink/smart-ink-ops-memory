@@ -1,0 +1,10 @@
+node_modules
+.next
+.env
+.env.local
+pnpm-lock.yaml
+__pycache__
+.pytest_cache
+*.pyc
+coverage
+.DS_Store
