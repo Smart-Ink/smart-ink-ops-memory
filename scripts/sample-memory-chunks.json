@@ -1,0 +1,16 @@
+[
+  {
+    "id": "chunk-seed-1",
+    "conversation_external_id": "conv-seed-1",
+    "message_external_ids": ["msg-seed-1", "msg-seed-2"],
+    "chunk_index": 0,
+    "content": "Weekly planning prompt template for Smart Ink operations reviews."
+  },
+  {
+    "id": "chunk-seed-2",
+    "conversation_external_id": "conv-seed-1",
+    "message_external_ids": ["msg-seed-3"],
+    "chunk_index": 1,
+    "content": "Follow-up task: finalize onboarding checklist and assign owner."
+  }
+]
