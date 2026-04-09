@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InboxType {
+  prompt_candidate
+  task_candidate
+  meeting_candidate
+  decision_candidate
+  asset_candidate
+  idea_candidate
+}
+
+enum InboxStatus {
+  pending
+  approved
+  rejected
+}
+
+enum SourceRefType {
+  conversation
+  message
+  chunk
+  inbox_item
+  canonical
+}
+
+model Project {
+  id          String              @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  chatSources       ChatSource[]
+  prompts           Prompt[]
+  promptRuns        PromptRun[]
+  tasks             Task[]
+  meetings          Meeting[]
+  meetingDecisions  MeetingDecision[]
+  meetingActions    MeetingAction[]
+  assets            Asset[]
+  assetUsages       AssetUsage[]
+  ideas             Idea[]
+  decisions         Decision[]
+  memoryHits        MemoryHit[]
+  analyticsSnapshot AnalyticsSnapshot[]
+}
+
+model ChatSource {
+  id          String             @id @default(cuid())
+  projectId   String
+  sourceName  String
+  rawMetadata Json?
+  createdAt   DateTime           @default(now())
+
+  project       Project            @relation(fields: [projectId], references: [id])
+  conversations ChatConversation[]
+}
+
+model ChatConversation {
+  id              String            @id @default(cuid())
+  projectId       String
+  chatSourceId    String
+  externalId      String?
+  title           String?
+  startedAt       DateTime?
+  rawPayload      Json
+  createdAt       DateTime          @default(now())
+
+  project        Project          @relation(fields: [projectId], references: [id])
+  chatSource     ChatSource       @relation(fields: [chatSourceId], references: [id])
+  messages       ChatMessage[]
+  chunks         ChatChunk[]
+  sourceRefs     SourceReference[]
+
+  @@index([projectId, chatSourceId])
+}
+
+model ChatMessage {
+  id               String            @id @default(cuid())
+  projectId        String
+  conversationId   String
+  externalId       String?
+  role             String
+  content          String
+  sequenceNo       Int
+  createdAt        DateTime?
+  rawPayload       Json?
+
+  conversation     ChatConversation  @relation(fields: [conversationId], references: [id])
+  chunks           ChatChunk[]
+  sourceRefs       SourceReference[]
+
+  @@index([conversationId, sequenceNo])
+}
+
+model ChatChunk {
+  id               String            @id @default(cuid())
+  projectId        String
+  conversationId   String
+  messageId        String
+  chunkIndex       Int
+  content          String
+  tokenEstimate    Int
+  embeddingStatus  String            @default("pending")
+  createdAt        DateTime          @default(now())
+
+  conversation     ChatConversation  @relation(fields: [conversationId], references: [id])
+  message          ChatMessage       @relation(fields: [messageId], references: [id])
+  sourceRefs       SourceReference[]
+
+  @@index([conversationId, messageId, chunkIndex])
+}
+
+model InboxItem {
+  id               String           @id @default(cuid())
+  projectId        String
+  type             InboxType
+  title            String
+  summary          String
+  payload          Json
+  confidenceScore  Float
+  status           InboxStatus      @default(pending)
+  createdAt        DateTime         @default(now())
+  reviewedAt       DateTime?
+
+  sourceRefs       SourceReference[]
+
+  @@index([projectId, type, status])
+}
+
+model SourceReference {
+  id               String          @id @default(cuid())
+  projectId        String
+  sourceType       SourceRefType
+  conversationId   String?
+  messageId        String?
+  chunkId          String?
+  inboxItemId      String?
+  canonicalType    String?
+  canonicalId      String?
+  metadata         Json?
+  createdAt        DateTime        @default(now())
+
+  conversation     ChatConversation? @relation(fields: [conversationId], references: [id])
+  message          ChatMessage?      @relation(fields: [messageId], references: [id])
+  chunk            ChatChunk?        @relation(fields: [chunkId], references: [id])
+  inboxItem        InboxItem?        @relation(fields: [inboxItemId], references: [id])
+
+  @@index([projectId, sourceType])
+}
+
+model Prompt {
+  id               String          @id @default(cuid())
+  projectId        String
+  title            String
+  body             String
+  tags             String[]
+  createdAt        DateTime        @default(now())
+  sourceRefs       Json?
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model PromptRun {
+  id               String          @id @default(cuid())
+  projectId        String
+  promptId         String
+  runBy            String?
+  input            String?
+  outputSummary    String?
+  createdAt        DateTime        @default(now())
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model Task {
+  id               String          @id @default(cuid())
+  projectId        String
+  title            String
+  description      String?
+  status           String          @default("open")
+  owner            String?
+  dueDate          DateTime?
+  createdAt        DateTime        @default(now())
+  sourceRefs       Json?
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model Meeting {
+  id               String          @id @default(cuid())
+  projectId        String
+  title            String
+  notes            String?
+  meetingDate      DateTime?
+  createdAt        DateTime        @default(now())
+  sourceRefs       Json?
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model MeetingDecision {
+  id               String          @id @default(cuid())
+  projectId        String
+  meetingId        String?
+  title            String
+  summary          String
+  createdAt        DateTime        @default(now())
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model MeetingAction {
+  id               String          @id @default(cuid())
+  projectId        String
+  meetingId        String?
+  actionText       String
+  owner            String?
+  dueDate          DateTime?
+  status           String          @default("open")
+  createdAt        DateTime        @default(now())
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model Asset {
+  id               String          @id @default(cuid())
+  projectId        String
+  title            String
+  assetType        String
+  location         String?
+  summary          String?
+  createdAt        DateTime        @default(now())
+  sourceRefs       Json?
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model AssetUsage {
+  id               String          @id @default(cuid())
+  projectId        String
+  assetId          String
+  context          String
+  usedAt           DateTime        @default(now())
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model Idea {
+  id               String          @id @default(cuid())
+  projectId        String
+  title            String
+  summary          String
+  status           String          @default("unresolved")
+  repetitionCount  Int             @default(1)
+  createdAt        DateTime        @default(now())
+  sourceRefs       Json?
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model Decision {
+  id               String          @id @default(cuid())
+  projectId        String
+  title            String
+  rationale        String?
+  status           String          @default("recorded")
+  decidedAt        DateTime        @default(now())
+  sourceRefs       Json?
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model MemoryHit {
+  id               String          @id @default(cuid())
+  projectId        String
+  queryText        String
+  resultChunkId    String?
+  selected         Boolean         @default(false)
+  metadata         Json?
+  createdAt        DateTime        @default(now())
+
+  project          Project         @relation(fields: [projectId], references: [id])
+}
+
+model AnalyticsSnapshot {
+  id                        String    @id @default(cuid())
+  projectId                 String
+  snapshotDate              DateTime  @default(now())
+  importedConversations     Int       @default(0)
+  indexedChunks             Int       @default(0)
+  pendingInbox              Int       @default(0)
+  approvedPrompts           Int       @default(0)
+  approvedTasks             Int       @default(0)
+  approvedMeetings          Int       @default(0)
+  overdueTasks              Int       @default(0)
+  repeatedUnresolvedIdeas   Int       @default(0)
+
+  project                   Project   @relation(fields: [projectId], references: [id])
+}
