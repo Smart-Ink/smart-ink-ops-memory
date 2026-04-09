@@ -1,17 +1,42 @@
-# Implementation Plan (InboxItem Extraction Pipeline)
+# Implementation Plan: smart-ink-ops-memory MVP
 
-1. **Define extraction interface boundary**
-   - Add a clean extractor interface that returns normalized InboxItem candidate shapes.
-   - Keep deterministic heuristics as the default implementation.
-   - Leave a clear extension point for future LLM-based extractor implementation.
+## 1) Monorepo foundation
+- Initialize a pnpm + turbo style monorepo structure with `apps`, `packages`, `services`, and `docs`.
+- Add root workspace, TypeScript base config, docker compose, env example, and repo-level README.
 
-2. **Implement deterministic heuristic extractor**
-   - Build rule-based detection for prompt, task, meeting, decision, idea, and asset candidates.
-   - Ensure deterministic confidence scoring and stable candidate titles/summaries/payload fields.
+## 2) Data layer with Prisma + Postgres
+- Implement full Prisma schema in `packages/db/prisma/schema.prisma` covering all required MVP entities.
+- Create DB client package and seed script for realistic demo data.
 
-3. **Integrate with ingest pipeline**
-   - Update `services/ingest/src/main.py` to use the extraction pipeline interface (not direct ad hoc regex calls).
-   - Preserve existing chunking + persistence flow while passing extracted candidates into `InboxItem` creation.
+## 3) Shared contracts + AI extraction utilities
+- Add shared TypeScript domain enums/types in `packages/shared`.
+- Add lightweight extraction/chunking helpers in `packages/ai` for candidate generation.
 
-4. **Tests**
-   - Add/adjust tests verifying all required candidate types are produced and extraction remains deterministic.
+## 4) Python services
+- Build `services/ingest` FastAPI service for ChatGPT export import pipeline:
+  - parse exports
+  - normalize transcript
+  - chunk messages
+  - persist to Postgres
+  - create inbox candidates with source references
+  - call memory service adapter indexing endpoint
+- Build `services/memory` FastAPI service exposing adapter boundary:
+  - `index_conversation_chunks(...)`
+  - `search_memory(...)`
+- Build `services/worker` placeholder for periodic analytics snapshots/extraction jobs.
+
+## 5) Next.js web app MVP modules
+- Build left-sidebar app shell and pages for dashboard, memory search, prompt library, tasks, meetings, inbox, assets, analytics.
+- Implement API routes:
+  - import trigger endpoint
+  - inbox approval endpoint
+  - memory search proxy endpoint
+- Implement dashboard cards + basic tables/lists and source traceability sections.
+
+## 6) Tests + docs
+- Add automated tests for parsing, normalization, chunking, candidate creation, approval flow (Python pytest).
+- Write docs: architecture, ingestion flow, review queue, memory boundary.
+
+## 7) Final validation
+- Ensure local run path with docker compose + app instructions.
+- Keep MemPalace integration behind explicit adapter TODO markers only where environment-specific.

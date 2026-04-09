@@ -23,7 +23,7 @@ Lean internal operations memory system for Smart Ink.
    ```bash
    docker compose up --build -d
    ```
-4. Generate Prisma client and apply migration + seed:
+4. Generate Prisma client and migrate:
    ```bash
    pnpm db:generate
    pnpm db:migrate
@@ -56,12 +56,3 @@ pytest
 - `docs/ingestion-flow.md`
 - `docs/review-queue.md`
 - `docs/memory-boundary.md`
-
-
-## Seed dataset (MVP demo)
-- 1 imported conversation with linked source, messages, and chunks
-- 3 inbox candidates
-- 2 prompts
-- 2 tasks
-- 1 meeting
-- source references linking inbox candidates back to chunk/message/conversation
