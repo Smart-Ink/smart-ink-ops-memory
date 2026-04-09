@@ -1,16 +1,42 @@
-# Implementation Plan (ChatGPT Conversations Import Upgrade)
+# Implementation Plan: smart-ink-ops-memory MVP
 
-1. **Parser upgrade for conversations-style exports**
-   - Implement robust parsing for ChatGPT export JSON that supports conversation records with `mapping` nodes and legacy `messages` arrays.
-   - Normalize into ordered conversation/message objects with stable IDs, roles, timestamps, and cleaned content.
+## 1) Monorepo foundation
+- Initialize a pnpm + turbo style monorepo structure with `apps`, `packages`, `services`, and `docs`.
+- Add root workspace, TypeScript base config, docker compose, env example, and repo-level README.
 
-2. **Exchange-pair chunking**
-   - Add chunking logic that groups transcript text by user/assistant exchange pairs (instead of per-message chunks).
-   - Keep chunk metadata linking each chunk to source message IDs used in the pair.
+## 2) Data layer with Prisma + Postgres
+- Implement full Prisma schema in `packages/db/prisma/schema.prisma` covering all required MVP entities.
+- Create DB client package and seed script for realistic demo data.
 
-3. **Persistence pipeline integration**
-   - Wire parser + normalization + exchange-pair chunking through `services/ingest/src/main.py`.
-   - Persist conversations/messages/chunks/candidates/source references in Postgres and keep app API import route behavior intact.
+## 3) Shared contracts + AI extraction utilities
+- Add shared TypeScript domain enums/types in `packages/shared`.
+- Add lightweight extraction/chunking helpers in `packages/ai` for candidate generation.
 
-4. **Tests**
-   - Expand ingestion tests to cover conversations-style mapping parsing, normalization order, exchange-pair chunking, and pipeline candidate generation assumptions.
+## 4) Python services
+- Build `services/ingest` FastAPI service for ChatGPT export import pipeline:
+  - parse exports
+  - normalize transcript
+  - chunk messages
+  - persist to Postgres
+  - create inbox candidates with source references
+  - call memory service adapter indexing endpoint
+- Build `services/memory` FastAPI service exposing adapter boundary:
+  - `index_conversation_chunks(...)`
+  - `search_memory(...)`
+- Build `services/worker` placeholder for periodic analytics snapshots/extraction jobs.
+
+## 5) Next.js web app MVP modules
+- Build left-sidebar app shell and pages for dashboard, memory search, prompt library, tasks, meetings, inbox, assets, analytics.
+- Implement API routes:
+  - import trigger endpoint
+  - inbox approval endpoint
+  - memory search proxy endpoint
+- Implement dashboard cards + basic tables/lists and source traceability sections.
+
+## 6) Tests + docs
+- Add automated tests for parsing, normalization, chunking, candidate creation, approval flow (Python pytest).
+- Write docs: architecture, ingestion flow, review queue, memory boundary.
+
+## 7) Final validation
+- Ensure local run path with docker compose + app instructions.
+- Keep MemPalace integration behind explicit adapter TODO markers only where environment-specific.

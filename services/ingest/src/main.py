@@ -7,7 +7,7 @@ import requests
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from .chunking import build_exchange_pairs, chunk_exchange_pairs
+from .chunking import chunk_message
 from .db import persist_import
 from .extract import extract_candidates
 from .normalize import normalize_transcript
@@ -31,41 +31,32 @@ def health():
 @app.post("/import/chatgpt")
 def import_chatgpt(payload: ImportRequest):
     parsed = parse_chatgpt_export(payload.export)
-    prepared: list[dict[str, Any]] = []
-    memory_chunks: list[dict[str, Any]] = []
+    prepared = []
+    memory_chunks = []
 
     for conversation in parsed:
         normalized_messages = normalize_transcript(conversation)
-        exchange_pairs = build_exchange_pairs(normalized_messages)
-        pair_chunks = chunk_exchange_pairs(exchange_pairs)
-
-        conv_dict: dict[str, Any] = {
+        conv_dict = {
             "external_id": conversation.external_id,
             "title": conversation.title,
             "started_at": conversation.started_at,
             "raw_payload": conversation.raw_payload,
-            "messages": normalized_messages,
-            "pair_chunks": [],
+            "messages": [],
         }
-
-        for idx, chunk in enumerate(pair_chunks):
-            chunk_candidates = extract_candidates(chunk["content"])
-            chunk_record = {
-                **chunk,
-                "chunk_index": idx,
-                "candidates": chunk_candidates,
-            }
-            conv_dict["pair_chunks"].append(chunk_record)
-            memory_chunks.append(
-                {
-                    "project_id": payload.projectId,
-                    "conversation_external_id": conversation.external_id,
-                    "message_external_ids": chunk["message_external_ids"],
-                    "chunk_index": idx,
-                    "content": chunk["content"],
-                }
-            )
-
+        for message in normalized_messages:
+            chunks = chunk_message(message["content"])
+            candidates = extract_candidates(message["content"])
+            conv_dict["messages"].append({**message, "chunks": chunks, "candidates": candidates})
+            for idx, chunk in enumerate(chunks):
+                memory_chunks.append(
+                    {
+                        "project_id": payload.projectId,
+                        "conversation_external_id": conversation.external_id,
+                        "message_external_id": message["external_id"],
+                        "chunk_index": idx,
+                        "content": chunk,
+                    }
+                )
         prepared.append(conv_dict)
 
     stats = persist_import(payload.projectId, payload.sourceName, prepared, memory_chunks)
