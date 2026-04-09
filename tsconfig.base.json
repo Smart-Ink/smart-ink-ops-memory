@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@smart-ink/shared": ["packages/shared/src"],
+      "@smart-ink/ai": ["packages/ai/src"],
+      "@smart-ink/db": ["packages/db/src"]
+    }
+  }
+}
